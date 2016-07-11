@@ -2,7 +2,6 @@
 #include <map>
 #include <vector>
 #include <cstring>
-#include <stack>
 
 using namespace std;
 
@@ -11,51 +10,59 @@ using namespace std;
 
 int board[R][C];
 int rain[R][C];
+bool visit[R][C];
 int r, c;
 int hight;
 
-typedef vector<int>::size_type sz_t;
-int trap(vector<int>& height) {
-    stack<int> lefts;
-    int ret = 0;
-    for (sz_t i = 0, iend = height.size(); i < iend; ++i) {
-        if (lefts.empty() || height[lefts.top()] > height[i])
-            lefts.push(i);
-        else if (lefts.size() == 1) {
-            lefts.pop();
-            lefts.push(i);
-        } else {
-            int base = lefts.top();
-            do {
-                lefts.pop();
-                ret += (min(height[i], height[lefts.top()]) - height[base]) * (i - lefts.top() - 1);
-                base = lefts.top();
-            } while (lefts.size() > 1 && height[i] >= height[base]);
-            if (height[i] >= height[base])
-                lefts.pop();
-            lefts.push(i);
+int dx[] = {-1, 0, 1, 0};
+int dy[] = {0, 1, 0, -1};
+
+void dfs(int x, int y)
+{
+    visit[x][y] = true;
+    for (int i = 0; i < 4; ++i) {
+        int nx = x + dx[i];
+        int ny = y + dy[i];
+        if (nx < 0 || ny < 0 || nx == r || ny == c)
+            continue;
+        if (rain[x][y] < rain[nx][ny] && rain[nx][ny] != board[nx][ny]) {
+            rain[nx][ny] = max(rain[x][y], board[nx][ny]);
+            dfs(nx, ny);
         }
     }
-    return ret;
 }
 
 int solve()
 {
     int ret = 0;
-    int row = 0, col = 0;
     for (int x = 1; x < r-1; ++x) {
-        vector<int> height(board[x], board[x]+c);
-        row += trap(height);
+        for (int y = 1; y < c-1; ++y) {
+            rain[x][y] = hight;
+        }
     }
-    for (int y = 1; y < c-1; ++y) {
-        vector<int> height(r);
-        for (int x = 0; x < r; ++x)
-            height[x] = board[x][y];
-        col += trap(height);
+    /*
+    for (int x = 0; x < r; ++x) {
+        for (int y = 0; y < c; ++y) {
+            cout << rain[x][y] << " ";
+        }
+        cout << endl;
     }
-    cout << row << " " << col << endl;
-
-    return min(row, col);
+    */
+    for (int x = 0; x < r; ++x) {
+        for (int y = 0; y < c; ++y) {
+            if (visit[x][y])
+                continue;
+            dfs(x, y);
+        }
+    }
+    for (int x = 0; x < r; ++x) {
+        for (int y = 0; y < c; ++y) {
+            //cout << rain[x][y] << " ";
+            ret += rain[x][y] - board[x][y];
+        }
+        //cout << endl;
+    }
+    return ret;
 }
 
 int main(void)
@@ -63,7 +70,7 @@ int main(void)
     int count;
     cin >> count;
     for (int i = 1; i <= count; ++i) {
-        //memset(visit, false, sizeof(visit));
+        memset(visit, false, sizeof(visit));
         cin >> r >> c;
         hight = 0;
         for (int x = 0; x < r; ++x) {
